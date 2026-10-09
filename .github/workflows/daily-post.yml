@@ -1,0 +1,40 @@
+name: Daily Blog Post
+
+on:
+  schedule:
+    # 매일 오후 6시 (UTC+9 한국시간 = UTC 9:00)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests python-dotenv markdown
+
+      - name: Run daily post script
+        env:
+          WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+          WP_EMAIL: ${{ secrets.WP_EMAIL }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          python daily_post.py
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: execution-logs
+          path: ./logs/
+          retention-days: 7
